@@ -11,13 +11,11 @@
 [![Chat at gitter](https://img.shields.io/badge/Chat%20on%20-Gitter-brightgreen.svg)](https://gitter.im/UltimateSecurityCam/Lobby)
 
 
----
 ## Table of content
 
 - [Introduction](#introduction)
   - [Technologies](#technologies)
   - [Working](#how-it-works)
-- [Step by step guide](#step-by-step-guide)
 - [Setup](#setup-instructions)
 - [Running](#running)
   - [Linux support](#ultimatesecuritycam-running-on-linux)
@@ -25,8 +23,9 @@
 - [Get in touch](#get-in-touch)
 
 
----
+
 ## Introduction
+---
 [(Back to top👆🏻)](#table-of-content)
 - This is a security camera software which detects any intruder and alerts the owner .
 - This is the basic prototype , we'll make it un-hack-able by using microphone and eliminating every possible hack to fool our software.
@@ -41,21 +40,10 @@
 We take a snapshot of the room , lets call this `base.jpg`. Now , the code continuously scan the current frame and subtract it from `base.jpg`.
 If the difference is more than a threshold , we'll consider a breach happening.
 
----
-## Step by step guide
-[(Back to top👆🏻)](#table-of-content)
 
-- Installation of all the required depedencies is completed first. [Setup](#setup-instructions)
-- The code is made to run via terminal/IDE. [Running](#running)
-- Sequence of code:
-	- The code first initializes a three seconds waiting camera window.
-	- The main code runs to detect movements and record the complete video footage.
-	- All the configurations of the video clip are recorded (like Date and Time, camera fps, maximum object movement recorded at a time, duration, etc.)
-	- The video clip and configuration data is saved for future reference and the code terminates.
-	
 
----
 ## Setup instructions
+---
 [(Back to top👆🏻)](#table-of-content)
 
 ## Initialisation :
@@ -64,36 +52,41 @@ To install the required packages use the following command in command prompt[win
  pip3 install -r requirements.txt
 ````
 
-## Working on the code:
+## Running instructions :
 - Windows: Open up `UltimateSecurityCam.py` in your preferred python IDE [windows.py](PythonCode/Windows.py)
-- Linux: Open the terminal in the `PythonCode` directory, copy the code `python3 UltimateSecurityCam.py` and run it.
+- Linux: Open the terminal in the `PythonCode` directory, copy the code `python UltimateSecurityCam.py` and run it.
 - More formally , fork the code , and clone it your machine . I recommend that you use the GitH desktop app.
   - If you need a python IDE , I recommend using pycharm. [Tutorial to install !](https://www.youtube.com/watch?v=QzcaEELafkE).
   - If you get an error , make sure all the **import statements are working** , if not , install using pip-install [Tutorial](https://www.youtube.com/watch?v=237dNNQhD3Q).
 
 
+
+## Running
 ---
-## Running 
 [(Back to top👆🏻)](#table-of-content)
 
 ### UltimateSecurityCam running on Linux
-Command (with PythonCode as the working directory):
-`python3 UltimateSecurityCam.py`
+
+Command(with Linux as the working directory):
+## UltimateSecurityCam running on Linux
+
+Command (with Linux as the working directory):
+`python UltimateSecurityCam.py`
 
 ![ultimatesecuritycam](https://user-images.githubusercontent.com/30645315/49302849-31d16380-f4ee-11e8-9bfa-4e99866fa3bc.gif)
 
 
 ### Running instructions:
-- Open up `UltimateSecurityCam.py` in your preferred python IDE [UltimateSecurityCam.py](PythonCode/UltimateSecurityCam.py) or run on command prompt using the command (in `PythonCode` directory)
-	run the command `python3 UltimateSecurityCam.py`.
+- Open up `UltimateSecurityCam.py` in your preferred python IDE [UltimateSecurityCam.py](PythonCode/UltimateSecurityCam.py)
+
 - Run using python 3.6 (recommended).
 - The program takes 3-second waiting time, after that it starts detecting motion , making an alert sound.
 
 Many improvements and developments are in the pipeline! To know more, contact on github or niteshx22@gmail.com
 
 
----
 ## Get in touch
+---
 [(Back to top👆🏻)](#table-of-content)
 
 [<img src="https://image.flaticon.com/icons/svg/185/185964.svg" width="35" padding="10">](https://www.linkedin.com/in/niteshx2/)
