@@ -1,67 +1,48 @@
-# coding=utf-8
+﻿# coding=utf-8
 
 import cv2
 import numpy as np
 import pygame
 import json
 import time, sys, os
-import pyaudio
-import wave
-import threading
-from imageai.Detection import ObjectDetection
- 
+
 #if you get error while importing the google how to install <Package Name> in python 3.6
 
-FORMAT = pyaudio.paInt16
-CHANNELS = 2
-RATE = 44100
-CHUNK = 1024
-#RECORD_SECONDS = 5
-WAVE_OUTPUT_FILENAME = "audio.wav"
-
-audio = pyaudio.PyAudio()
-
+#initial values set
+THRESHOLD = 40
 camera = cv2.VideoCapture(0)
 
-size = (int(camera.get(cv2.CAP_PROP_FRAME_WIDTH)),
-				int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-
+es = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9,4))
+kernel = np.ones((5,5), np.uint8)
+background = None
 
 # Write test video
 fps = 2 #camera.get(cv2.CAP_PROP_FPS)
 pygame.mixer.init()
+cameraSound = pygame.mixer.Sound("snapshotsound.ogg")
+size = (int(camera.get(cv2.CAP_PROP_FRAME_WIDTH)),
+		int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 #video file name
 videofile = "basic_motion_detection.avi"
+
+videoWriter = cv2.VideoWriter(os.path.join(str(dir_path),videofile),
+				  cv2.VideoWriter_fourcc('D', 'I', 'V', 'X'),
+				  fps, size)
+frame_count = 0
 
 class UltimateSecurityCam:
 	"""	UltimateSecurityCam class identifies object movements and 
 		detection of any kind of undesirable movement in the 
 		surroundings
 	"""
+	
 
 	def __init__(self):
+		pass
 
-		self.stream = audio.open(format=FORMAT, channels=CHANNELS,
-				rate=RATE, input=True,
-				frames_per_buffer=CHUNK)
-		self.frames = []
-
-		#initial values set
-		self.THRESHOLD = 40
-
-		self.es = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9,4))
-		#self.kernel = np.ones((5,5), np.uint8)
-		self.background = None
-
-		self.cameraSound = pygame.mixer.Sound("snapshotsound.ogg")
-		
-		self.videoWriter = cv2.VideoWriter(os.path.join(str(dir_path),videofile),
-						  cv2.VideoWriter_fourcc('D', 'I', 'V', 'X'),
-						  fps, size)
-
-		
 	def initial_window(self):
 		#initial window starts 
 		initial = int(time.time())
@@ -84,33 +65,27 @@ class UltimateSecurityCam:
 	def usc(self):
 		#main window opens and opject movement detection starts
 		maxcnts = 0		
-		dark = 0
-		#global background
+		global background, frame_count
 		start = time.time()	
-		frame_count = 0
 		while (True):
-			frame_count += 1
-			if dark: os.system('clear'); print ("recording...")
-			if dark: self.stream_audio(self.frames)
-						
 			ret, frame = camera.read()
-			frameOriginal = frame.copy()
+			frame_count += 1
+			
 			# The first frame as the background
-			if self.background is None:
-				self.background = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-				self.background = cv2.GaussianBlur(self.background, (21,21), 0)
+			if background is None:
+				background = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+				background = cv2.GaussianBlur(background, (21,21), 0)
 				continue
 			
 			gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 			gray_frame = cv2.GaussianBlur(gray_frame, (21,21), 0)
 
-			if dark: self.stream_audio(self.frames)
 							
 			# Compare the difference between each frame of image and the background
 			#print(background.shape, gray_frame.shape)
-			diff = cv2.absdiff(self.background, gray_frame)
-			diff = cv2.threshold(diff, self.THRESHOLD, 255, cv2.THRESH_BINARY)[1]
-			diff = cv2.dilate(diff, self.es, iterations=2)
+			diff = cv2.absdiff(background, gray_frame)
+			diff = cv2.threshold(diff, THRESHOLD, 255, cv2.THRESH_BINARY)[1]
+			diff = cv2.dilate(diff, es, iterations=2)
 			
 			# Calculate the outline of the target in the image
 			image, cnts, hierarchy = cv2.findContours(diff.copy(),
@@ -122,7 +97,6 @@ class UltimateSecurityCam:
 			#b,g,r = cv2.split(frame)
 			#pixels = frame.shape[0]*frame.shape[1]
 			#print(sum(sum(b+g+r))/(3*pixels))
-			if dark: self.stream_audio(self.frames)
 			
 			#finds the level of darkness value ranging from 0 to 255
 			darkness_level = np.mean(gray_frame)
@@ -130,18 +104,16 @@ class UltimateSecurityCam:
 			#Level of darkness selected
 			if darkness_level < 50:
 				detection_text = detection_text + str('(Dark)')
-				dark = 1
+				
 				
 			detection_text_colour = (0,255,0) 	#set as green
 			if len(cnts) > 0:
 				#if breach detected
 				detection_text_colour = (0,0,255)   #set to red
-				self.cameraSound.play()
+				cameraSound.play()
 
-			if dark: self.stream_audio(self.frames)
-			
 			for c in cnts:
-				if cv2.contourArea(c) < (self.background.shape[0]*self.background.shape[1])/204:
+				if cv2.contourArea(c) < (background.shape[0]*background.shape[1])/204:
 					#minimum area to be calculated based on image size and camera megapixels
 					continue
 				# Calculate the bounding box
@@ -149,9 +121,8 @@ class UltimateSecurityCam:
 				cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2)
 
 			#maximum object detected
-			if len(cnts)>maxcnts: 
-				maxcnts=len(cnts)
-				cv2.imwrite('MaxMotionimage.jpg',frameOriginal)
+			if len(cnts)>maxcnts: maxcnts=len(cnts)
+
 			#print(detection_text)
 			cv2.putText(frame,detection_text,(60,30),cv2.FONT_HERSHEY_DUPLEX,1,detection_text_colour,2)
 
@@ -162,22 +133,18 @@ class UltimateSecurityCam:
 
 			cv2.imshow("Ultimate Security Camera", merged_windows)
 
-			
 			#cv2.imshow("contours", frame)
-			self.videoWriter.write(frame)
+			videoWriter.write(frame)
 			#cv2.imshow("dif", diff)
 			#cv2.imwrite('didff.jpg', diff)
-
-			if dark: self.stream_audio(self.frames)
 
 			keypress = cv2.waitKey(25)
 			if keypress:
 				if keypress &0xff == ord('q'):
-					self.terminate_audio(self.frames)
 					break
 				elif keypress &0xff == ord('r'):			
 					#reset the camera
-					self.background = None
+					background = None
 
 		cv2.destroyAllWindows()
 		camera.release()
@@ -187,54 +154,39 @@ class UltimateSecurityCam:
 
 		data={"Date and Time":time.asctime(time.localtime(time.time())),
 			 "Camera FPS":fps,
-			 "Threshold":self.THRESHOLD,
-			 "Frame Counts": frame_count,
+			 "Threshold":THRESHOLD,
+			  "Frame Counts": frame_count,
 			 "Max Objects recorded":maxcnts,
 			 "Video File":videofile,
 			 "Path":dir_path,
-			 "Duration": '%0.4f' %(duration)} #+ ' seconds'}		
+			 "Duration": '%0.4f' %(duration)} #+ ' seconds'}
 		return data
 
-	def stream_audio(self,frames):
-		data = self.stream.read(CHUNK)
-		frames.append(data)
-
-	def terminate_audio(self, frames):
-		print ("finished recording!") 
-		# stop Recording
-		self.stream.stop_stream()
-		self.stream.close()
-		audio.terminate()
-
-		waveFile = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-		waveFile.setnchannels(CHANNELS)
-		waveFile.setsampwidth(audio.get_sample_size(FORMAT))
-		waveFile.setframerate(RATE)
-		waveFile.writeframes(b''.join(frames))
-		waveFile.close()
-		
 	def config(self,data):
 		#saves all necessary configurations
 		
+		confirm ='y'
 		#confirm = input("Do you wish to save the current configs? [Y/N]: ")
 		#if run with python2 use raw_input
 
 		configfile = "config.json"
 
-		print("\nUpdating config file...")
-		with open(configfile,'w') as jfile:
-			json.dump(data, jfile, indent = 4)
-		print("Data updated to " + configfile + " successfully!")
-		
-	def ObjectDetection(self):
-		current_path = os.getcwd()
-		objDetector = ObjectDetection()
-		os.system('clear')
-		print("Processing image...")
-		objDetector.setModelTypeAsRetinaNet()
-		objDetector.setModelPath( os.path.join(current_path , "resnet50_coco_best_v2.0.1.h5"))
-		objDetector.loadModel()
-		detections = objDetector.detectObjectsFromImage(input_image=os.path.join(current_path , "MaxMotionimage.jpg"), output_image_path=os.path.join(current_path , "MaxMotionimageDetected.jpg"))
-		os.system('clear')
-		print("Image processed (saved as MaxMotionimageDetected.jpg)!")
-		
+		if confirm.startswith('y' or 'Y'):
+			print("\nUpdating config file...")
+			with open(configfile,'w') as jfile:
+				json.dump(data, jfile, indent = 4)
+			print("Data updated to " + configfile + " successfully!")
+
+		elif confirm.startswith('n' or 'N'):
+			pass
+
+		else:
+			print("Invalid input!")
+
+
+#Sequence of main program execution
+start = UltimateSecurityCam()
+start.initial_window()
+data = start.usc()
+start.config(data)
+print("Program succesfully terminated!")
